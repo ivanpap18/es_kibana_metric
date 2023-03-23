@@ -1,0 +1,89 @@
+#                                    __   __  __
+#                                    \ \ / / / /
+#                                     \ V / / /
+#                                      \_/  \/
+#
+#                                    V E C T O R
+#                                   Configuration
+#
+# ------------------------------------------------------------------------------
+# Website: https://vector.dev
+# Docs: https://vector.dev/docs
+# Chat: https://chat.vector.dev
+# ------------------------------------------------------------------------------
+
+#LANCE MULTIPLE CONFIG  
+# vector --config vector1.toml --config vector2.toml
+
+# GLOBBING SYNTAX
+# vector --config /etc/vector/*.toml
+
+# MULTIPLE TRANSFORMATIONS
+# inputs = ["ma_source_1", "ma_source_2"]
+
+# Default directory for Vector data storage:
+data_dir = "${DATA_DIR}"
+
+# Vector's GraphQL API (disabled by default)
+# Uncomment to try it out with the `vector top` command or
+# in your browser at http://localhost:8686
+[api]
+  enabled = true
+  # address = "127.0.0.1:8686"
+
+[sources.logs_april]
+  type = "docker_logs"
+  include_containers = ["april_oav"]
+
+# [transforms.april-contracts] 
+#   type = "remap"
+#   inputs = ["logs_april_docker"]
+#   source = """
+#     .info, err = strip_ansi_escape_codes(.info)
+#   """
+
+# [transforms.april-products] 
+#   type = "remap"
+#   inputs = ["logs_april_docker"]
+#   source = """
+#     .info, err = strip_ansi_escape_codes(.info)
+#   """
+
+[transforms.april_all] 
+  type = "remap"
+  inputs = ["logs_april"]
+  source = """ 
+    del(.label)
+    del(.container_id)
+    del(.host)
+    del(.image)
+    del(.container_created_at)
+    .message, err = strip_ansi_escape_codes(.message)
+    del(.source_type)
+    del(.stream)
+  """
+
+# //CONSOLE
+[sinks.logs_april_to_console]
+  type = "console"
+  inputs = ["april_all"]
+  target = "stdout"
+
+    [sinks.logs_april_to_console.encoding]
+    codec = "json"
+    
+#//ELASTIC APRIL
+[sinks.logs_april_to_elastic]
+  type = "elasticsearch"
+  inputs = ["april_all"]
+  pipeline = "Logs_April"
+  compression = "none"
+  endpoint = "${END_POINT}"
+  tls.crt_file = "${CRT_FILE}"
+  tls.key_file= "${KEY_FILE}"
+  tls.ca_file= "${CA_FILE}"
+  auth.user = "${ELASTIC_USERNAME}"
+  auth.password = "${ELASTIC_PASSWORD}"
+  auth.strategy = "${LICENSE}"
+  bulk.index = "vector-april-%Y-%m-%d"
+  suppress_type_name = true

@@ -1,0 +1,4 @@
+FROM docker.elastic.co/enterprise-search/enterprise-search:8.6.0
+COPY enterprise-search.yml /usr/share/enterprise-search/config/enterprise-search.yml
+USER root
+RUN chown root /usr/share/enterprise-search/config/

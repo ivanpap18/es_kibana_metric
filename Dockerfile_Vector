@@ -1,0 +1,4 @@
+FROM timberio/vector:0.28.1-debian
+COPY vector/ /etc/vector/
+USER root
+RUN chown root /etc/vector/

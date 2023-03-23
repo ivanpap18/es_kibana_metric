@@ -1,0 +1,101 @@
+metricbeat.config.modules:
+  path: ${PATH_METRICBEAT}/metricbeat.yml
+  reload.enabled: false
+  # Period on which files under path should be checked for changes
+  reload.period: 10s
+
+processors:
+  # - add_cloud_metadata: ~
+  # - add_docker_metadata: ~
+  # - drop_fields:
+  #     fields: ["system.network_summary.tcp", "system.network_summary.udp", "system.network_summary.udp_lite", "system.network_summary.icmp"]
+  #     ignore_missing: true
+  # - add_host_metadata:
+  #     cache.ttl: 5m
+  #     geo:
+  #       location: 45.6501, 0.1849 
+  #       continent_name: Europe
+  #       country_iso_code: FR
+  #       region_name: Charente
+  #       region_iso_code: FR-16
+  #       city_name: Angoulême
+
+output.elasticsearch:
+  hosts: "${END_POINT}"
+  username: "${ELASTIC_USERNAME}"
+  password: "${ELASTIC_PASSWORD}"
+  ssl.certificate_authorities: ["${PATH_METRICBEAT}/config/certs/ca/ca.crt"]
+  ssl.certificate: "${PATH_METRICBEAT}/config/certs/es01/es01.crt"
+  ssl.key: "${PATH_METRICBEAT}/config/certs/es01/es01.key"
+  # pipeline: "geoip"
+
+setup.kibana:
+  host: "http://kibana:${KIBANA_PORT}"
+
+# //! TODO
+# adding hint support
+# metricbeat.autodiscover:Quand tu es 
+#   providers:
+#     - type: docker
+#       hints.enabled: true
+
+# enabled modules for monitoring (e.g. elasticsearch-xpack)
+metricbeat.modules:
+# - module: elasticsearch
+#   xpack.enabled: true
+#   period: 10s
+  # hosts: ["http://node01:9200"]
+
+#-------------------------------- Docker Module --------------------------------
+  - module: docker
+    metricsets:
+      - "container"
+      # - "cpu"
+      # - "diskio"
+      # - "event"
+      # - "healthcheck"
+      # - "info"
+      - "memory"
+      # - "network"
+    hosts: ["unix:///var/run/docker.sock"]
+    processors:
+      - drop_fields:
+          fields: ["docker.memory.rss", "docker.memory.stats"]
+    period: 10s
+    enabled: true
+
+#-------------------------------- System Module --------------------------------
+  - module: system
+    metricsets:
+      # - "socket"
+      - "cpu"
+  #   processors:
+  #     - drop_fields:
+  #         # syntax : "module.metricset.name"
+  #         fields: ["system.socket.user", "system.socket.process", "system.socket.direction", "system.socket.family", "system.socket.local.port", "system.socket.remote.port", "system.socket.remote.host", "system.socket.remote.etld_plus_one", "system.socket.remote.host_error"]
+    enabled: true
+    period: 10s
+  #   process.include_top_n:
+  #     by_cpu: 5      # include top 5 processes by CPU
+  #     by_memory: 5   # include top 5 processes by memory
+
+
+#-------------------------------- Kibana Module --------------------------------
+  # - module: kibana
+  #   metricsets:
+  #     - status
+  #   period: 10s
+  #   hosts: ["localhost:5601"]
+
+#-------------------------------- MongoDB Module --------------------------------
+  # - module: mongodb
+  #   metricsets: ["collstats"]
+  #   collstats.metrics: ["collection", "name"]
+  #     - dbstats
+  #     - status
+  #     - collstats
+  #     - metrics
+  #     - replstatus
+  #   period: 10s
+  #   hosts: 
+  #   - "mongodb://127.0.0.1:27017"
