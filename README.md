@@ -102,7 +102,7 @@ Un modèle d'index est utilisé pour définir les paramètres de configuration p
 ```
 PUT _index_template/april-index-template
 {
-  "index_patterns": ["vector-april-logs*"],
+  "index_patterns": ["logs-docker-april-dev*"],
   "data_stream": { },
   "composed_of": [ "april-mappings", "april-settings" ],
   "priority": 500
@@ -111,17 +111,17 @@ PUT _index_template/april-index-template
 
 ### Créer un nouveau data stream
 
-Le nom de votre data stream "vector-april-logs" dépend de trois paramètres qui sont définis dans le fichier vector.toml, à savoir :
+Le nom de votre data stream "logs-docker-april.dev" dépend de trois paramètres qui sont définis dans le fichier vector.toml, à savoir :
 
-- data_stream.type = "vector" : ce paramètre définit le type de la source de données.
-- data_stream.dataset = "april" : ce paramètre définit le nom du dataset de la source de données.
-- data_stream.namespace = "logs" : ce paramètre définit le namespace de la source de données.
+- data_stream.type = "logs" : ce paramètre définit le type de la source de données.
+- data_stream.dataset = "docker" : ce paramètre définit le nom du dataset de la source de données.
+- data_stream.namespace = "april.dev" : ce paramètre définit le namespace de la source de données.
 
-Le nom complet du data stream sera `vector-april-logs`. Vous pouvez modifier ces paramètres en fonction de vos besoins.
+Le nom complet du data stream sera `logs-docker-april.dev`. Vous pouvez modifier ces paramètres en fonction de vos besoins.
 Assurez-vous que le nom du data stream défini dans votre fichier `vector.toml` correspond au nom du data stream que vous avez créé dans Elasticsearch.
 
 ```
-PUT _data_stream/vector-april-logs
+PUT _data_stream/logs-docker-april-dev
 ```
 
 ## Configuration de Vector
@@ -131,8 +131,8 @@ Pour envoyer des données vers Elasticsearch dans un data stream, vous devez con
 ```
 [sinks]
 mode = "data_stream"
-data_stream.type = "vector" 
-data_stream.dataset = "april" 
-data_stream.namespace = "logs"
+data_stream.type = "logs" 
+data_stream.dataset = "docker" 
+data_stream.namespace = "april.dev"
 ```
 

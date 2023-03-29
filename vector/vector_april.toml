@@ -59,6 +59,7 @@ data_dir = "${DATA_DIR}"
     del(.image)
     del(.container_created_at)
     .message, err = strip_ansi_escape_codes(.message)
+    .service = del(.container_name)
     del(.source_type)
     del(.stream)
   """
@@ -87,6 +88,6 @@ data_dir = "${DATA_DIR}"
   auth.strategy = "${LICENSE}"
   suppress_type_name = true
   mode = "data_stream"
-  data_stream.type = "vector"
-  data_stream.dataset = "april"
-  data_stream.namespace = "logs"
+  data_stream.type = "logs"
+  data_stream.dataset = "docker"
+  data_stream.namespace = "april-dev"
