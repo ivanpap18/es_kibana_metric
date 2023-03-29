@@ -61,9 +61,15 @@ services:
         echo "Setting kibana_system password";
         until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
         echo "Creating pipeline for project April";
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ingest/pipeline/Logs_April -d "{\"processors\":[]}"; 
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ingest/pipeline/Logs_April -d "{\"description\": \"Pipeline pour le projet April\",\"processors\":[]}"; 
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ilm/policy/30-days-policy -d "{\"policy\":{\"phases\":{\"hot\":{\"actions\":{\"rollover\":{\"max_primary_shard_size\":\"50gb\"}}},\"warm\":{\"min_age\":\"30d\",\"actions\":{\"shrink\":{\"number_of_shards\":1},\"forcemerge\": {\"max_num_segments\": 1}}}}}}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_component_template/april-settings -d "{\"template\":{\"settings\":{\"index.lifecycle.name\":\"30-days-policy\"}}}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_component_template/april-mappings -d "{\"template\":{\"mappings\":{\"properties\":{\"@timestamp\":{\"type\":\"date\",\"format\":\"date_optional_time||epoch_millis\"},\"message\":{\"type\":\"wildcard\"}}}}}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_index_template/april-index-template -d "{\"index_patterns\":[\"logs-docker-april-dev*\"],\"data_stream\":{},\"composed_of\":[\"april-mappings\",\"april-settings\"],\"priority\":500}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_data_stream/logs-docker-april-dev
         echo "All done!";
       '
+  
     # echo "Creating pipeline geoip with processor for ip addresses";
     # curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ingest/pipeline/geoip -d "{\"processors\":[{\"geoip\":{\"field\":\"docker.container.ip_addresses\"}}]}"; 
     healthcheck:
