@@ -31,47 +31,53 @@ data_dir = "${DATA_DIR}"
   enabled = true
   # address = "127.0.0.1:8686"
 
-[sources.logs_april]
+[sources.logs_flexibranche]
   type = "docker_logs"
-  include_containers = ["april_oav"]
-  [sources.logs_april.multiline]
-    start_pattern = "^[\\s]+"
-    mode = "continue_through"
-    condition_pattern = "^[\\s]+"
-    timeout_ms = 1000
+  include_containers = ["flexibranche_dev"]
 
-[transforms.april_all] 
+# [transforms.april-contracts] 
+#   type = "remap"
+#   inputs = ["logs_april_docker"]
+#   source = """
+#     .info, err = strip_ansi_escape_codes(.info)
+#   """
+
+# [transforms.april-products] 
+#   type = "remap"
+#   inputs = ["logs_april_docker"]
+#   source = """
+#     .info, err = strip_ansi_escape_codes(.info)
+#   """
+
+[transforms.flexibranche_all] 
   type = "remap"
-  inputs = ["logs_april"]
+  inputs = ["logs_flexibranche"]
   source = """ 
     del(.label)
     del(.container_id)
     del(.host)
     del(.image)
     del(.container_created_at)
-    .service = del(.container_name)
     .message, err = strip_ansi_escape_codes(.message)
-    if !contains(.message, "info: profil prospect event with data") { abort } else { .message = replace(.message, "info: profil prospect event with data","")}
-    .message = strip_whitespace(.message)
-    .message = parse_json!("["+ .message + "]")
+    .service = del(.container_name)
     del(.source_type)
     del(.stream)
   """
 
 # //CONSOLE
-[sinks.logs_april_to_console]
+[sinks.logs_flexibranche_to_console]
   type = "console"
-  inputs = ["april_all"]
+  inputs = ["flexibranche_all"]
   target = "stdout"
 
-    [sinks.logs_april_to_console.encoding]
+    [sinks.logs_flexibranche_to_console.encoding]
     codec = "json"
     
 #//ELASTIC APRIL
-[sinks.logs_april_to_elastic]
+[sinks.logs_flexibranche_to_elastic]
   type = "elasticsearch"
-  inputs = ["april_all"]
-  pipeline = "Logs_April"
+  inputs = ["flexibranche_all"]
+  pipeline = "Logs_Flexibranche"
   compression = "none"
   endpoint = "${END_POINT}"
   tls.crt_file = "${CRT_FILE}"
@@ -84,7 +90,4 @@ data_dir = "${DATA_DIR}"
   mode = "data_stream"
   data_stream.type = "logs"
   data_stream.dataset = "docker"
-  data_stream.namespace = "april-dev"
-  # mode = "bulk"
-  # bulk.action = "index"
-  # bulk.index = "vector-april-%Y-%m-%d"
+  data_stream.namespace = "flexibranche-dev"
