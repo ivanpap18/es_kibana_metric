@@ -1,4 +1,4 @@
 FROM timberio/vector:0.28.1-debian
-COPY vector/ /etc/vector/
+COPY vector/vector_demo.toml /etc/vector/vector_demo.toml
 USER root
 RUN chown root /etc/vector/

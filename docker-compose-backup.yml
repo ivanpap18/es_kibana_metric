@@ -1,4 +1,4 @@
-version: "3.7"
+version: "2.2"
 
 services:
   setup:
@@ -42,9 +42,9 @@ services:
           "      - localhost\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
-          "  - name: logstash\n"\
+          "  - name: es04\n"\
           "    dns:\n"\
-          "      - logstash\n"\
+          "      - es04\n"\
           "      - localhost\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
@@ -59,15 +59,19 @@ services:
         echo "Waiting for Elasticsearch availability";
         until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;   
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ilm/policy/prod-policy -d "{\"policy\":{\"phases\":{\"hot\":{\"min_age\":\"0ms\",\"actions\":{\"rollover\":{\"max_size\":\"3gb\",\"max_age\":\"3min\"},\"set_priority\":{\"priority\":50}}},\"delete\":{\"actions\":{\"delete\":{\"delete_searchable_snapshot\":false}}}}}}";
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ilm/policy/recette-policy -d "{\"policy\":{\"phases\":{\"hot\":{\"min_age\":\"0ms\",\"actions\":{\"rollover\":{\"max_size\":\"1gb\",\"max_age\":\"1min\"},\"set_priority\":{\"priority\":50}}},\"delete\":{\"actions\":{\"delete\":{\"delete_searchable_snapshot\":false}}}}}}";
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_component_template/recette-settings -d "{\"template\":{\"settings\":{\"index.lifecycle.name\":\"recette-policy\"}}}";
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_component_template/prod-settings -d "{\"template\":{\"settings\":{\"index.lifecycle.name\":\"prod-policy\"}}}";
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_index_template/recette -d "{\"index_patterns\":[\"logs-*-recette\"],\"data_stream\":{},\"priority\":\"500\",\"composed_of\":[\"recette-settings\"]}";
-        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_index_template/prod -d "{\"index_patterns\":[\"logs-*-prod\"],\"data_stream\":{},\"priority\":\"400\",\"composed_of\":[\"prod-settings\"]}";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        echo "Creating pipeline for project April";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ingest/pipeline/Logs_April -d "{\"description\": \"Pipeline pour le projet April\",\"processors\":[]}"; 
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ilm/policy/30-days-policy -d "{\"policy\":{\"phases\":{\"hot\":{\"actions\":{\"rollover\":{\"max_primary_shard_size\":\"50gb\"}}},\"warm\":{\"min_age\":\"30d\",\"actions\":{\"shrink\":{\"number_of_shards\":1},\"forcemerge\": {\"max_num_segments\": 1}}}}}}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_component_template/april-settings -d "{\"template\":{\"settings\":{\"index.lifecycle.name\":\"30-days-policy\"}}}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_component_template/april-mappings -d "{\"template\",{\"mappings\":{\"properties\":{\"@timestamp\":{\"type\":\"date\",\"format\":\"date_optional_time||epoch_millis\"},\"message\":{\"type\":\"wildcard\"}}}}}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_index_template/april-index-template -d "{\"index_patterns\":[\"logs-docker-april-dev*\"],\"data_stream\":{},\"composed_of\":[\"april-mappings\",\"april-settings\"],\"priority\":500}";
+        curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_data_stream/logs-docker-april-dev
         echo "All done!";
       '
+  
+    # echo "Creating pipeline geoip with processor for ip addresses";
+    # curl -s -X PUT --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_ingest/pipeline/geoip -d "{\"processors\":[{\"geoip\":{\"field\":\"docker.container.ip_addresses\"}}]}"; 
     healthcheck:
       test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
       interval: 1s
@@ -103,7 +107,6 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
-      # - stack.templates.enabled=false
     mem_limit: ${MEM_LIMIT}
     ulimits:
       memlock:
@@ -143,7 +146,6 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
-      # - stack.templates.enabled=false
     mem_limit: ${MEM_LIMIT}
     ulimits:
       memlock:
@@ -183,7 +185,6 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
-      # - stack.templates.enabled=false
     mem_limit: ${MEM_LIMIT}
     ulimits:
       memlock:
@@ -207,6 +208,9 @@ services:
         condition: service_healthy
       es03:
         condition: service_healthy
+    # build:
+    #   context: .
+    #   dockerfile: DockerFile_Kibana
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
     volumes:
       - certs:/usr/share/kibana/config/certs
@@ -219,9 +223,9 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
-      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY="34bf373b59f60228ffd8fa933b749a14"
-      - XPACK_REPORTING_ENCRYPTIONKEY="c5364e62c092c7f6a034315e06f967c1"
-      - XPACK_SECURITY_ENCRYPTIONKEY="f61481b432bd80ed9b65697c01878b85"
+      # - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY="34bf373b59f60228ffd8fa933b749a14"
+      # - XPACK_REPORTING_ENCRYPTIONKEY="c5364e62c092c7f6a034315e06f967c1"
+      # - XPACK_SECURITY_ENCRYPTIONKEY="f61481b432bd80ed9b65697c01878b85"
       - ENTERPRISESEARCH_HOST=http://enterprise-search:3002
     mem_limit: ${MEM_LIMIT}
     healthcheck:
@@ -234,12 +238,7 @@ services:
       timeout: 10s
       retries: 120
 
-  redis:
-    image: redis:latest
-      
-  logstash:
-    user: "0"
-    image: logstash:${STACK_VERSION}
+  metricbeat:
     depends_on:
       es01:
         condition: service_healthy
@@ -247,40 +246,93 @@ services:
         condition: service_healthy
       es03:
         condition: service_healthy
+    build:
+      context: .
+      dockerfile: Dockerfile_MetricBeat
+    volumes:
+      - certs:/usr/share/metricbeat/config/certs
+      - metricbeatdata:/usr/share/metricbeat/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - discovery.seed_hosts=es01,es02,es03
-      # - LS_JAVA_OPTS="-Xms512m -Xmx512m"
-      - XPACK_MONITORING_ELASTICSEARCH_HOSTS="https://es01:9200,https://es02:9200,https://es03:9200"
-      - XPACK_MONITORING_ELASTICSEARCH_USERNAME="elastic"
-      - XPACK_MONITORING_ELASTICSEARCH_PASSWORD="PleaseChangeMe"
-      - XPACK_MONITORING_ENABLED="true"
-    volumes:
-      - certs:/usr/share/logstash/certs
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-    # entrypoint: ["/bin/sh", "-c", " chown -R logstash:root /usr/share/logstash/certs"]
-    # entrypoint:
-    #   - /bin/sh
-    #   - -c
-    #   - |
-    #     chown -R logstash:root /usr/share/logstash/certs
-    #     /entrypoint
-
-  filebeat:
-    user: root
-    privileged: true
-    image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
+      - PATH_METRICBEAT=${PATH_METRICBEAT}
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+      - ES_PORT=${ES_PORT}
+      - KIBANA_PORT=${KIBANA_PORT}
+      - END_POINT=${END_POINT} 
+  
+  # vector:
+  #   depends_on:
+  #     es01:
+  #       condition: service_healthy
+  #     es02:
+  #       condition: service_healthy
+  #     es03:
+  #       condition: service_healthy
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile_Vector
+  #   volumes:
+  #     # - ./:/etc/vector/
+  #     # - certs:/etc/vector/certs
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   environment:
+  #     - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+  #     - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+  #     - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+  #     - ES_PORT=${ES_PORT}
+  #     - KIBANA_PORT=${KIBANA_PORT}
+  #     - CRT_FILE=${CRT_FILE}
+  #     - KEY_FILE=${KEY_FILE}
+  #     - CA_FILE=${CA_FILE}
+  #     - LICENSE=${LICENSE}
+  #     - DATA_DIR=${DATA_DIR} 
+  #     - END_POINT=${END_POINT}
+  #     - VECTOR_CONFIG_DIR=${VECTOR_CONFIG_DIR}
+  #     - VECTOR_WATCH_CONFIG=${VECTOR_WATCH_CONFIG}
+      
+  enterprise-search:
     depends_on:
       es01:
         condition: service_healthy
-      es02:
+      kibana:
         condition: service_healthy
-      es03:
-        condition: service_healthy
+    # build:
+      # context: .
+      # dockerfile: DockerFile_Enterprise
+    image: docker.elastic.co/enterprise-search/enterprise-search:8.6.0
+    ports:
+      - 3002:3002
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-    - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - certs:/usr/share/enterprise-search/config/certs
+      - enterprisesearchdata:/usr/share/enterprise-search/config
+    environment:
+      - elasticsearch.host=http://es01:9200
+      - secret_management.encryption_keys=[${ENCRYPTION_KEYS}]
+      - allow_es_settings_modification=true
+      - elasticsearch.host=${END_POINT}
+      - elasticsearch.username=elastic
+      - elasticsearch.password=${ELASTIC_PASSWORD}
+      - elasticsearch.ssl.enabled=true
+      - elasticsearch.ssl.certificate_authority=/usr/share/enterprise-search/config/certs/ca/ca.crt
+      - kibana.host=http://kibana:5601
+      - kibana.external_url=http://localhost:5601
+    healthcheck:
+      test:
+        [
+            "CMD-SHELL",
+            "curl -s -I http://localhost:3002 | grep -q 'HTTP/1.1 302 Found'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
 
+networks:
+  es_default:
+    external: true
+    driver: overlay
+        
 volumes:
   certs:
     driver: local
@@ -292,4 +344,7 @@ volumes:
     driver: local
   kibanadata:
     driver: local
-
+  metricbeatdata:
+    driver: local
+  enterprisesearchdata:
+    driver: local

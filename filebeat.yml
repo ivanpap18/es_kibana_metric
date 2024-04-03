@@ -1,0 +1,15 @@
+filebeat.inputs:
+- type: container
+  paths:
+  - '/var/lib/docker/containers/*/*.log'
+
+  multiline.type: pattern
+  multiline.pattern: '^[[:space:]]'
+  multiline.negate: false
+  multiline.match: after
+  processors:
+    - add_docker_metadata: ~
+
+output.redis:
+  hosts: ["redis"]
+  key: "logstash"
