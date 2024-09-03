@@ -1,0 +1,19 @@
+---
+kind: pipeline
+type: docker
+
+steps:
+  - name: test
+    image: bash
+    commands:
+      # - my-command > plugin-script.sh
+      - printf "Hello from devtools"
+    when:
+      branch:
+        - master
+trigger:
+  branch:
+    - master
+  event:
+    - push
+    - tag  
