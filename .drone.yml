@@ -5,24 +5,16 @@ type: docker
 steps:
   - name: test
     image: bash
-    environment:
-      USERNAME:
-        from_secret: username
     commands:
-      - printf "$$USERNAME"
+      # - my-command > plugin-script.sh
+      - printf "Hello from elk ivanpap18"
     when:
       branch:
         - master
----
-kind: secret
-name: username
-get:
-  path: secret/docker
-  name: username
-
 trigger:
   branch:
     - master
+    
   event:
     - push
-    - tag    
+    - tag   
