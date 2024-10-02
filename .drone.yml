@@ -13,8 +13,7 @@ steps:
         - master
 trigger:
   branch:
-    - master
-    
+    - master   
   event:
     - push
     - tag   
