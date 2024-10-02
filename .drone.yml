@@ -5,14 +5,15 @@ type: docker
 steps:
   - name: test
     image: bash
+    environment:
+      USERNAME:
+        from_secret: username
     commands:
-      - printf "Hello from devtools"
-    when:
-      branch:
-        - master
-trigger:
-  branch:
-    - master
-  event:
-    - push
-    - tag  
+      - printf "$$USERNAME"
+
+---
+kind: secret
+name: username
+get:
+  path: secret/docker
+  name: username
