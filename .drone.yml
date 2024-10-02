@@ -10,10 +10,20 @@ steps:
         from_secret: username
     commands:
       - printf "$$USERNAME"
-
+    when:
+      branch:
+        - master
 ---
 kind: secret
 name: username
 get:
   path: secret/docker
   name: username
+
+trigger:
+  branch:
+    - master
+    
+  event:
+    - push
+    - tag    
