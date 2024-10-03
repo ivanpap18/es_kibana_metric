@@ -10,10 +10,10 @@ steps:
       - printf "Hello from elk ivanpap18"
     when:
       branch:
-        - master
+        - main
 trigger:
   branch:
-    - master   
+    - main   
   event:
     - push
     - tag   
