@@ -13,7 +13,7 @@ steps:
         - main
 trigger:
   branch:
-    - main   
+    - main 
   event:
     - push
     - tag   
