@@ -5,20 +5,22 @@ type: docker
 steps:
   - name: test
     image: bash
-    environment:
-    USERNAME:
-      from_secret: username
+    # environment:
+    # USERNAME:
+    #   from_secret: username
+    # commands:
+    #   - echo $USERNAME
     commands:
-      - echo $USERNAME
+      - printf "Hello from elk ivanpap18"
     when:
       branch: 
         - main     
----
-kind: secret
-name: password
-get:
-  path: secrets/data/docker
-  name: username
+# ---
+# kind: secret
+# name: password
+# get:
+#   path: secrets/data/docker
+#   name: username
   
 trigger:
   branch:
