@@ -7,7 +7,7 @@ steps:
     image: bash
     commands:
       # - my-command > plugin-script.sh
-      - printf "Hello from elk ivanpap18"
+      - printf "Hello world"
     when:
       branch:
         - main
