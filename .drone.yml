@@ -13,8 +13,7 @@ steps:
 
 ---
 kind: secret
-
-external_data:
-  username:
-    path: secret/data/docker
-    name: username
+name: username
+get:
+  path: secret/data/docker
+  name: username
