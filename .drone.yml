@@ -11,7 +11,7 @@ steps:
     # commands:
     #   - echo $USERNAME
     commands:
-      - printf "Hello world"
+      - printf "Hello world!"
     when:
       branch: 
         - main     
