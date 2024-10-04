@@ -19,7 +19,7 @@ steps:
 kind: secret
 name: password
 get:
-  path: secrets/data/docker
+  path: v1/secrets/data/docker
   name: username
   
 trigger:
