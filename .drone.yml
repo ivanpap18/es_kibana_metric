@@ -9,7 +9,7 @@ steps:
     USERNAME:
       from_secret: username
     commands:
-      - echo $USERNAME
+      - echo $$USERNAME
     # commands:
     #   - printf "Hello world!"
     when:
