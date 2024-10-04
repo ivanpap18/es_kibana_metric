@@ -1,28 +1,19 @@
+---
 kind: pipeline
 type: docker
+
 steps:
   - name: test
     image: bash
-    environment:
-    USERNAME:
-      from_secret: username
     commands:
-      - echo ${USERNAME}
-    # commands:
-    #   - printf "Hello world!"
+      # - my-command > plugin-script.sh
+      - printf "Hello from elk ivanpap18"
     when:
-      branch: 
-        - main     
----
-kind: secret
-name: password
-get:
-  path: secret/data/docker
-  name: username
-  
+      branch:
+        - main
 trigger:
   branch:
-    - main 
+    - main   
   event:
     - push
-    - tag   
+    - tag
