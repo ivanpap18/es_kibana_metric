@@ -8,12 +8,11 @@ steps:
     USERNAME:
       from_secret: username
   commands:
-  - echo "hi there"
-  - echo ${USERNAME}
+  - env
 
 ---
 kind: secret
 name: username
 get:
-  path: secrets/data/docker
+  path: secret/data/docker
   name: username
