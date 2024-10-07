@@ -8,7 +8,7 @@ steps:
     USERNAME:
       from_secret: username
   commands:
-  - echo "hi there!"
+  - echo "hi there"
   - echo ${USERNAME}
 ---
 kind: secret
