@@ -8,6 +8,7 @@ steps:
     USERNAME:
       from_secret: username
   commands:
+  - echo "Hi from elk"
   - echo ${USERNAME}
 ---
 kind: secret
