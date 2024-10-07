@@ -14,5 +14,5 @@ steps:
 kind: secret
 name: username
 get:
-  path: /secrets/data/docker
+  path: secrets/data/docker
   name: username
