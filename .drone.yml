@@ -8,7 +8,7 @@ steps:
     USERNAME:
       from_secret: username
   commands:
-  - env
+  - echo ${USERNAME}
 ---
 kind: secret
 name: username
