@@ -9,9 +9,8 @@ steps:
       from_secret: username
   commands:
   # - echo "Hi from elk!"
-  - echo $${USERNAME}
-  - echo $${DRONE_COMMIT_AUTHOR}
-    # - env
+    - echo $${USERNAME}
+    - env
 ---
 kind: secret
 name: username
