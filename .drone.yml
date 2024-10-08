@@ -9,8 +9,8 @@ steps:
       from_secret: username
   commands:
   # - echo "Hi from elk!"
-  # - echo ${USERNAME}
-    - env
+  - echo ${USERNAME}
+    # - env
 ---
 kind: secret
 name: username
