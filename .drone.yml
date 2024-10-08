@@ -10,7 +10,7 @@ steps:
   commands:
   # - echo "Hi from elk!"
     - echo $${USERNAME}
-    - env
+    # - env
 ---
 kind: secret
 name: username
