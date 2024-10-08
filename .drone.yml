@@ -10,6 +10,7 @@ steps:
   commands:
   # - echo "Hi from elk!"
   - echo $${USERNAME}
+  - echo $${DRONE_COMMIT_AUTHOR}
     # - env
 ---
 kind: secret
